@@ -30,6 +30,8 @@ class EasySwooleEvent implements Event
         var_dump($serverIp);
         $config->setServerIp($serverIp);
         $config->setNodeManager($manager);
+        // 【优化建议】既然已经用了 Redis 作为注册中心，建议关闭 UDP 广播功能
+        // Docker 跨容器默认不支持 UDP 广播，保留它们只会徒增报错和资源消耗
         $config->getBroadcastConfig()->setEnableBroadcast(false);//启用广播
         $config->getBroadcastConfig()->setEnableListen(false);   //启用监听
         $rpc = new Rpc($config);
