@@ -10,29 +10,61 @@
 // +----------------------------------------------------------------------
 namespace App\Rpc;
 
+use EasySwoole\EasySwoole\Config;
 use EasySwoole\Rpc\NodeManager\NodeManagerInterface;
 use EasySwoole\Rpc\ServiceNode;
+use EasySwoole\Utility\Random;
+use Yurun\Nacos\Client;
+use Yurun\Nacos\ClientConfig;
 
 class NacosManager implements NodeManagerInterface
 {
+    private $client;
+    private $host;
+    private $port;
+    private $namespaceId;
+    private $groupName;
+
+    public function __construct()
+    {
+        $arr               = Config::getInstance()->getConf('NACOS');
+        $this->client      = new Client(new ClientConfig($arr));
+        $containerIp = current(swoole_cpu_num() ? swoole_get_local_ip() : []);
+        $serverIp    = !empty($containerIp) ? $containerIp : '0.0.0.0';
+        $this->host        = $serverIp;
+        $this->port        = 9503;
+        $this->namespaceId = $arr['tenant'];
+        $this->groupName   = $arr['group'];
+    }
+
     function getServiceNodes(string $serviceName, ?string $version = null): array
     {
-
+        $response = $this->client->instance->list($serviceName);
+        $nodes    = [];
+        foreach ($response->getHosts() as $node) {
+            $serverNode = new ServiceNode();
+            $serverNode->setServiceName($serviceName);
+            $serverNode->setServerIp($node->getIp());
+            $serverNode->setServerPort($node->getPort());
+            $nodes[] = $serverNode;
+        }
+        return $nodes;
     }
 
     function getServiceNode(string $serviceName, ?string $version = null): ?ServiceNode
     {
-
+        $list = $this->getServiceNodes($serviceName, $version);
+        return Random::arrayRandOne($list);
     }
 
     function deleteServiceNode(ServiceNode $serviceNode): bool
     {
-
+        return $this->client->instance->deregister($this->host, $this->port, $serviceNode->getServiceName());
     }
 
     function serviceNodeHeartBeat(ServiceNode $serviceNode): bool
     {
-
+        return $this->client->instance->register($this->host, $this->port, $serviceNode->getServiceName(), $this->namespaceId, 1, true, true, '', '', $this->groupName);
     }
 
 }
