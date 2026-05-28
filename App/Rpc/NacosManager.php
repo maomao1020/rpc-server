@@ -64,6 +64,7 @@ class NacosManager implements NodeManagerInterface
 
     function serviceNodeHeartBeat(ServiceNode $serviceNode): bool
     {
+        var_dump('HeartBeat');
         return $this->client->instance->register($this->host, $this->port, $serviceNode->getServiceName(), $this->namespaceId, 1, true, true, '', '', $this->groupName);
     }
 
