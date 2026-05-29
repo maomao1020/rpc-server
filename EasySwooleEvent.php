@@ -6,11 +6,12 @@ namespace EasySwoole\EasySwoole;
 
 use App\Rpc\NacosManager;
 use App\RpcServices\Goods;
+use App\RpcServices\Order;
+use App\Utility\SmoothTokenBucket;
+use EasySwoole\AtomicLimit\AtomicLimit;
+use EasySwoole\Component\Di;
 use EasySwoole\EasySwoole\AbstractInterface\Event;
 use EasySwoole\EasySwoole\Swoole\EventRegister;
-use EasySwoole\Redis\Config\RedisConfig;
-use EasySwoole\RedisPool\RedisPool;
-use EasySwoole\Rpc\NodeManager\RedisManager;
 use EasySwoole\Rpc\Rpc;
 
 class EasySwooleEvent implements Event
@@ -39,6 +40,9 @@ class EasySwooleEvent implements Event
         $rpc = new Rpc($config);
         // 添加 Goods 服务到服务管理器中
         $rpc->add(new Goods());
-        $rpc->attachToServer(ServerManager::getInstance()->getSwooleServer());
+        $rpc->add(new Order());
+        SmoothTokenBucket::getInstance()->initTable(2048);
+        $swooleServer = ServerManager::getInstance()->getSwooleServer();
+        $rpc->attachToServer($swooleServer);
     }
 }

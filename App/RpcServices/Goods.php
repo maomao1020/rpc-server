@@ -11,10 +11,11 @@
 namespace App\RpcServices;
 
 
-use EasySwoole\Rpc\AbstractService;
+use EasySwoole\AtomicLimit\AtomicLimit;
+use EasySwoole\Component\Di;
 
 
-class Goods extends AbstractService
+class Goods extends BaseService
 {
 
     function serviceName(): string
@@ -22,7 +23,7 @@ class Goods extends AbstractService
         return 'Goods';
     }
 
-    function list()
+    public function List()
     {
         var_dump($this->request()->toArray());
         $this->response()->setResult([
