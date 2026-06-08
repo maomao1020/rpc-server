@@ -29,8 +29,8 @@ class NacosManager implements NodeManagerInterface
     {
         $arr               = Config::getInstance()->getConf('NACOS');
         $this->client      = new Client(new ClientConfig($arr));
-        $containerIp = current(swoole_cpu_num() ? swoole_get_local_ip() : []);
-        $serverIp    = !empty($containerIp) ? $containerIp : '0.0.0.0';
+        $containerIp       = current(swoole_cpu_num() ? swoole_get_local_ip() : []);
+        $serverIp          = !empty($containerIp) ? $containerIp : '0.0.0.0';
         $this->host        = $serverIp;
         $this->port        = 9503;
         $this->namespaceId = $arr['tenant'];

@@ -7,11 +7,14 @@ namespace EasySwoole\EasySwoole;
 use App\Rpc\NacosManager;
 use App\RpcServices\Goods;
 use App\RpcServices\Order;
+use App\Utility\IpTrafficShaper;
 use App\Utility\SmoothTokenBucket;
 use EasySwoole\AtomicLimit\AtomicLimit;
 use EasySwoole\Component\Di;
 use EasySwoole\EasySwoole\AbstractInterface\Event;
 use EasySwoole\EasySwoole\Swoole\EventRegister;
+use EasySwoole\Http\Request;
+use EasySwoole\Http\Response;
 use EasySwoole\Rpc\Rpc;
 
 class EasySwooleEvent implements Event
@@ -19,6 +22,24 @@ class EasySwooleEvent implements Event
     public static function initialize()
     {
         date_default_timezone_set('Asia/Shanghai');
+        Di::getInstance()->set(SysConst::HTTP_GLOBAL_ON_REQUEST,function (Request $request,Response $response){
+            $fd = $request->getSwooleRequest()->fd;
+            $clientInfo =  ServerManager::getInstance()->getSwooleServer()->getClientInfo($fd);
+            $ip = $clientInfo['remote_ip'] ?? '127.0.0.1';
+            // 设定规则：每 10 秒内，单个 IP 最多请求 20 次
+            $isBlock = IpTrafficShaper::getInstance()->isLimiting($ip, 10, 20);
+
+            if ($isBlock) {
+                // 拦截请求并直接响断点状态码
+                $response->withStatus(429);
+                $response->write(json_encode([
+                    'code' => 429,
+                    'msg'  => 'Too Many Requests. Please try again later.'
+                ], JSON_UNESCAPED_UNICODE));
+
+                return false; // 返回 false 结束当前请求流程
+            }
+        });
     }
 
     public static function mainServerCreate(EventRegister $register)

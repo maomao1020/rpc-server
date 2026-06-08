@@ -11,8 +11,6 @@
 namespace App\RpcServices;
 
 use App\Utility\SmoothTokenBucket;
-use EasySwoole\AtomicLimit\AtomicLimit;
-use EasySwoole\Component\Di;
 use EasySwoole\Rpc\AbstractService;
 
 abstract class BaseService extends AbstractService
